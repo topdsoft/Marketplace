@@ -89,5 +89,21 @@ class Listing extends AppModel {
 			'order' => ''
 		)
 	);
+
+	var $hasMany = array(
+		'Image' => array(
+			'className' => 'Image',
+			'foreignKey' => 'listing_id',
+			'dependent' => false,
+			'conditions' => '',
+			'fields' => '',
+			'order' => '',
+			'limit' => '',
+			'offset' => '',
+			'exclusive' => '',
+			'finderQuery' => '',
+			'counterQuery' => ''
+		)
+	);
 }
 ?>

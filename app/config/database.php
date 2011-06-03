@@ -5,8 +5,8 @@ class DATABASE_CONFIG {
 		'driver' => 'mysql',
 		'persistent' => false,
 		'host' => 'localhost',
-		'login' => 'your username here',
-		'password' => 'your password here',
+		'login' => 'root',
+		'password' => '{put your MySQL password here}',
 		'database' => 'marketplace',
 	);
 }

@@ -6,6 +6,7 @@
 		$text=nl2br($listing['Listing']['text']);
 		echo $text;
 		echo "<br><small>Listed {$listing['Listing']['created']} in $catName</small>";
+		foreach($listing['Image'] as $img) echo '<br>'.$this->Html->image('../files/'.$img['filename']);
 		echo '</dl>';
 	?>
 </div>

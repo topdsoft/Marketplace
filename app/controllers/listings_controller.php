@@ -101,6 +101,7 @@ class ListingsController extends AppController {
 			$locations = $this->Listing->Location->find('list');
 			$categories = $this->Listing->Category->find('list');
 			$this->set(compact('users', 'locations', 'categories'));
+			$this->set('role', $this->Auth->user('role'));
 		} else {
 			$this->Session->setFlash(__('This is not your listing', true));
 			$this->redirect(array('action' => 'index'));
@@ -112,12 +113,70 @@ class ListingsController extends AppController {
 			$this->Session->setFlash(__('Invalid id for listing', true));
 			$this->redirect(array('action'=>'index'));
 		}
+		//validate listing ownership
+		$uid=$this->Auth->user('id');
+		$q=$this->Listing->query("select * from listings where id=$id and user_id=$uid limit 1");
+		if (!$q) {
+			$this->Session->setFlash(__('Invalid id for listing', true));
+			$this->redirect(array('action'=>'index'));
+		}
 		if ($this->Listing->delete($id)) {
+			//also delete any image files
+			$q=$this->Listing->query("select * from images where listing_id=$id");
+			if ($q) {
+				//delete all files
+				foreach($q as $img) unlink(WWW_ROOT.'files/'.$img['images']['filename']);
+				$this->Listing->query("delete from images where listing_id=$id");
+			}
 			$this->Session->setFlash(__('Listing deleted', true));
 			$this->redirect(array('action'=>'index'));
 		}
 		$this->Session->setFlash(__('Listing was not deleted', true));
 		$this->redirect(array('action' => 'index'));
+	}
+	
+	function upload($id=null) {
+		if ($this->data) $id=$this->data['Listing']['listingID'];
+		if (!$id) {
+			$this->Session->setFlash(__('Invalid id for listing', true));
+			$this->redirect(array('action'=>'index'));
+		}
+		if ($this->data) {
+			// Validate the type. Should be JPEG or PNG.
+			$allowed = array ('image/pjpeg', 'image/jpeg', 'image/JPG', 'image/X-PNG', 'image/PNG', 'image/png', 'image/x-png');
+//			debug($_FILES);exit();
+			if (in_array($_FILES['data']['type']['Listing']['upload'], $allowed)) {
+				// Move the file over.
+				if (move_uploaded_file ($_FILES['data']['tmp_name']['Listing']['upload'], WWW_ROOT."files/$id{$_FILES['data']['name']['Listing']['upload']}")) {
+					$this->Session->setFlash(__('The file has been uploaded.', true));
+					//add to images
+					$this->Listing->query("insert into images (filename,created,listing_id) values ('$id{$_FILES['data']['name']['Listing']['upload']}',now(),$id)");
+					$this->redirect(array('action'=>'edit',$id));
+				} // End of move... IF.
+			} else { // Invalid type.
+				$this->Session->setFlash(__('Please upload a JPEG or PNG image.', true));
+			}//endif
+		}
+		$this->set('listingID',$id);
+		$this->set('role', $this->Auth->user('role'));
+	}
+	
+	function delImage($id=null) {
+		if (!$id) {
+			$this->redirect(array('action'=>'index'));
+		}
+		//validate $id
+		$uid=$this->Auth->user('id');
+		$q=$this->Listing->query("select * from images,listings where images.id=$id and images.listing_id=listings.id and listings.user_id=$uid limit 1");
+		if($q) {
+			//ok remove file
+			unlink(WWW_ROOT.'files/'.$q[0]['images']['filename']);
+			//and remove image entry
+			$this->Listing->query("delete from images where id=$id limit 1");
+			$this->redirect(array('action'=>'edit',$q[0]['listings']['id']));
+		} else $this->redirect(array('action'=>'index'));
+		debug($q);
+		exit();
 	}
 	
 	protected function getTrail($id) {

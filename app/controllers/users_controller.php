@@ -23,6 +23,9 @@ class UsersController extends AppController {
 
 	function add() {
 		if (!empty($this->data)) {
+			$q=$this->User->query('select * from users');
+			//check if this is the first user added, if so make role=10
+			if(!$q) $this->data['User']['role']=10;
 			$this->User->create();
 			if ($this->User->save($this->data)) {
 				$this->Session->setFlash(__('The user has been saved', true));
